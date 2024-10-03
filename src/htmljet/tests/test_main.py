@@ -3,8 +3,7 @@ from unittest.mock import AsyncMock, patch, MagicMock
 import asyncio
 import os
 import tempfile
-from PIL import Image
-from htmljet.main import take_screenshots, cleanup_similar_images, app, take_screenshots_all_levels, analyze_html_structure
+from htmljet.main import take_screenshots, app, take_screenshots_all_levels, analyze_html_structure
 from typer.testing import CliRunner
 
 class TestHtmlJet(unittest.TestCase):
@@ -71,21 +70,8 @@ class TestHtmlJet(unittest.TestCase):
 
         asyncio.run(run_test())
 
-    def test_cleanup_similar_images(self):
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            # Create valid PNG test images
-            for i in range(3):
-                img = Image.new('RGB', (60, 30), color = (73, 109, 137))
-                img.save(os.path.join(tmp_dir, f"image_{i}.png"))
-
-            clean_dir = cleanup_similar_images(tmp_dir)
-
-            self.assertTrue(os.path.exists(clean_dir))
-            self.assertEqual(len(os.listdir(clean_dir)), 1)  # Assuming all images are similar
-
     @patch('htmljet.main.take_screenshots')
-    @patch('htmljet.main.cleanup_similar_images')
-    def test_snap_command(self, mock_cleanup, mock_take_screenshots):
+    def test_snap_command(self, mock_take_screenshots):
         async def mock_take_screenshots_async(*args, **kwargs):
             pass
 
@@ -94,7 +80,6 @@ class TestHtmlJet(unittest.TestCase):
         result = self.runner.invoke(self.app, ["snap", "https://example.com"])
         self.assertEqual(result.exit_code, 0)
         mock_take_screenshots.assert_called_once()
-        mock_cleanup.assert_called_once()
 
     @patch('htmljet.main.take_screenshots_all_levels')
     def test_snap_command_all_levels(self, mock_take_screenshots_all_levels):
@@ -107,16 +92,6 @@ class TestHtmlJet(unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
         mock_take_screenshots_all_levels.assert_called_once()
 
-    @patch('htmljet.main.cleanup_similar_images')
-    def test_cleanup_command(self, mock_cleanup):
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            for i in range(3):
-                with open(os.path.join(tmp_dir, f"image_{i}.png"), "wb") as f:
-                    f.write(b"test image content")
-
-            result = self.runner.invoke(self.app, ["cleanup", tmp_dir])
-            self.assertEqual(result.exit_code, 0)
-            mock_cleanup.assert_called_once_with(tmp_dir, 0.9)
 
 if __name__ == '__main__':
     unittest.main()
