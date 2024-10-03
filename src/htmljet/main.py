@@ -103,7 +103,20 @@ async def take_screenshots(url: str, output_dir: str):
                         progress.advance(task)
                         continue
 
-                    await element.screenshot(path=f"{output_dir}/element_{i}.png", timeout=5000)
+                    # Get the bounding box of the element
+                    bounding_box = await element.bounding_box()
+                    if bounding_box is None:
+                        console.print(f"[yellow]⚠️  Element {i} has no bounding box, skipping...[/yellow]")
+                        failed_screenshots += 1
+                        progress.advance(task)
+                        continue
+
+                    # Take a screenshot of the specific element
+                    await page.screenshot(
+                        path=f"{output_dir}/element_{i}.png",
+                        clip=bounding_box,
+                        timeout=5000
+                    )
                     successful_screenshots += 1
                 except TimeoutError:
                     console.print(f"[red]⏱️  Timeout error occurred for element {i}[/red]")
