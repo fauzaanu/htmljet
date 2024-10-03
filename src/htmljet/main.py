@@ -20,46 +20,33 @@ async def analyze_html_structure(page):
     soup = BeautifulSoup(html_content, 'html.parser')
     body = soup.body
 
-    def print_element_hierarchy(elements, level=1):
-        element_dict = {}
-        for i, element in enumerate(elements, 1):
-            if element.name:
-                element_dict[i] = element
-                child_count = len([child for child in element.children if child.name])
-                console.print(f"[bold]{level}.{i}[/bold] {element.name}: {child_count} child elements")
+    def count_elements_by_level(element, current_level=1):
+        level_counts = {current_level: 0}
+        for child in element.children:
+            if child.name:
+                level_counts[current_level] += 1
+                child_counts = count_elements_by_level(child, current_level + 1)
+                for level, count in child_counts.items():
+                    level_counts[level] = level_counts.get(level, 0) + count
+        return level_counts
 
-        return element_dict
+    element_counts = count_elements_by_level(body)
 
-    level = 1
-    current_elements = body.children
-    element_dict = {}
+    for level, count in sorted(element_counts.items()):
+        console.print(f"[cyan]Level {level}: {count} elements[/cyan]")
 
     while True:
-        console.print(f"\n[cyan]Level {level}:[/cyan]")
-        level_dict = print_element_hierarchy(current_elements, level)
-        element_dict[level] = level_dict
-
-        if not level_dict:
-            console.print("[yellow]No more elements at this level.[/yellow]")
-            break
-
-        while True:
-            user_input = console.input("\n[bold cyan]Enter the level number to capture, or 'n' to go deeper: [/bold cyan]")
-            if user_input.lower() == 'n':
-                level += 1
-                current_elements = [child for element in level_dict.values() for child in element.children if child.name]
-                break
-            try:
-                selected_level = int(user_input)
-                if selected_level in element_dict:
-                    selected_elements = element_dict[selected_level].values()
-                    selector = ', '.join([element.name for element in selected_elements])
-                    console.print(f"[bold green]Using selector: {selector}[/bold green]")
-                    return selector
-                else:
-                    console.print("[bold red]Invalid level. Please enter a valid level number.[/bold red]")
-            except ValueError:
-                console.print("[bold red]Invalid input. Please enter a valid level number or 'n'.[/bold red]")
+        user_input = console.input("\n[bold cyan]Enter the level number to capture: [/bold cyan]")
+        try:
+            selected_level = int(user_input)
+            if selected_level in element_counts:
+                selector = f"body {'> *' * (selected_level - 1)}"
+                console.print(f"[bold green]Using selector: {selector}[/bold green]")
+                return selector
+            else:
+                console.print("[bold red]Invalid level. Please enter a valid level number.[/bold red]")
+        except ValueError:
+            console.print("[bold red]Invalid input. Please enter a valid level number.[/bold red]")
 
     console.print("[bold yellow]No elements selected. Using 'body > *' as fallback.[/bold yellow]")
     return 'body > *'
