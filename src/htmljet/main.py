@@ -1,12 +1,9 @@
 import asyncio
 import os
-import shutil
 import typer
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
 from playwright.async_api import async_playwright, TimeoutError
-from PIL import Image
-import imagehash
 from bs4 import BeautifulSoup
 
 app = typer.Typer(help="🚀 HTMLJET: Capture HTML elements as screenshots")
