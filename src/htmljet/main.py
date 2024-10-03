@@ -7,12 +7,42 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskPr
 from playwright.async_api import async_playwright, TimeoutError
 from PIL import Image
 import imagehash
+from bs4 import BeautifulSoup
 
 app = typer.Typer(help="🚀 HTMLJET: Capture UI elements as screenshots")
 console = Console()
 
 # Global variable to store the Progress object
 progress = None
+
+async def analyze_html_structure(page):
+    html_content = await page.content()
+    soup = BeautifulSoup(html_content, 'html.parser')
+    body = soup.body
+
+    def count_children(element):
+        return len([child for child in element.children if child.name is not None])
+
+    def find_significant_element(element, threshold=5):
+        if count_children(element) >= threshold:
+            return element
+        for child in element.children:
+            if child.name is not None:
+                result = find_significant_element(child, threshold)
+                if result:
+                    return result
+        return None
+
+    significant_element = find_significant_element(body)
+    
+    if significant_element:
+        selector = significant_element.name
+        classes = significant_element.get('class', [])
+        if classes:
+            selector += '.' + '.'.join(classes)
+        return selector
+    else:
+        return 'body > *'
 
 async def take_screenshots(url: str, output_dir: str):
     async with async_playwright() as p:
@@ -26,7 +56,10 @@ async def take_screenshots(url: str, output_dir: str):
             await page.goto(url)
             await page.wait_for_load_state("networkidle")
 
-        elements = await page.query_selector_all('[data-element_type="container"]')
+        selector = await analyze_html_structure(page)
+        console.print(f"[bold cyan]🔍 Using selector: {selector}[/bold cyan]")
+
+        elements = await page.query_selector_all(selector)
         console.print(f"[bold cyan]🔍 Found {len(elements)} elements[/bold cyan]")
 
         os.makedirs(output_dir, exist_ok=True)
