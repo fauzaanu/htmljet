@@ -1,7 +1,6 @@
 import unittest
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, patch
 import asyncio
-import os
 import tempfile
 from htmljet.main import take_screenshots, app, take_screenshots_all_levels, analyze_html_structure
 from typer.testing import CliRunner
