@@ -3,12 +3,13 @@ from unittest.mock import AsyncMock, patch, MagicMock
 import asyncio
 import os
 import tempfile
-from elementor_snaps.main import take_screenshots, cleanup_similar_images, snap, cleanup
+from elementor_snaps.main import take_screenshots, cleanup_similar_images, app
 from typer.testing import CliRunner
 
 class TestElementorSnaps(unittest.TestCase):
     def setUp(self):
         self.runner = CliRunner()
+        self.app = app
 
     @patch('elementor_snaps.main.async_playwright')
     def test_take_screenshots(self, mock_playwright):
@@ -31,32 +32,34 @@ class TestElementorSnaps(unittest.TestCase):
 
     def test_cleanup_similar_images(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
-            # Create test images
+            # Create valid PNG test images
             for i in range(3):
-                with open(os.path.join(tmp_dir, f"image_{i}.png"), "w") as f:
-                    f.write("test image content")
+                img = Image.new('RGB', (60, 30), color = (73, 109, 137))
+                img.save(os.path.join(tmp_dir, f"image_{i}.png"))
 
             clean_dir = cleanup_similar_images(tmp_dir)
 
             self.assertTrue(os.path.exists(clean_dir))
-            self.assertEqual(len(os.listdir(clean_dir)), 3)  # Assuming all images are unique
+            self.assertEqual(len(os.listdir(clean_dir)), 1)  # Assuming all images are similar
 
     @patch('elementor_snaps.main.asyncio.run')
     @patch('elementor_snaps.main.cleanup_similar_images')
     def test_snap_command(self, mock_cleanup, mock_run):
-        result = self.runner.invoke(snap, ["https://elementor.com"])
+        result = self.runner.invoke(self.app, ["snap", "https://elementor.com"])
         self.assertEqual(result.exit_code, 0)
         mock_run.assert_called_once()
         mock_cleanup.assert_called_once()
 
-    def test_cleanup_command(self):
+    @patch('elementor_snaps.main.cleanup_similar_images')
+    def test_cleanup_command(self, mock_cleanup):
         with tempfile.TemporaryDirectory() as tmp_dir:
             for i in range(3):
-                with open(os.path.join(tmp_dir, f"image_{i}.png"), "w") as f:
-                    f.write("test image content")
+                with open(os.path.join(tmp_dir, f"image_{i}.png"), "wb") as f:
+                    f.write(b"test image content")
 
-            result = self.runner.invoke(cleanup, [tmp_dir])
+            result = self.runner.invoke(self.app, ["cleanup", tmp_dir])
             self.assertEqual(result.exit_code, 0)
+            mock_cleanup.assert_called_once_with(tmp_dir, 0.9)
 
 if __name__ == '__main__':
     unittest.main()

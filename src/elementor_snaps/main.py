@@ -11,6 +11,9 @@ import imagehash
 app = typer.Typer(help="🚀 Elementor Snaps: Capture Elementor UI elements as screenshots")
 console = Console()
 
+# Global variable to store the Progress object
+progress = None
+
 async def take_screenshots(url: str, output_dir: str):
     async with async_playwright() as p:
         browser = await p.chromium.launch_persistent_context(
@@ -72,19 +75,23 @@ def cleanup_similar_images(directory: str, similarity_threshold: float = 0.5):
     :param similarity_threshold: Threshold for considering images as similar (0.0 to 1.0)
     :return: Path to the new 'clean' directory
     """
+    global progress
     clean_dir = os.path.join(directory, "clean")
     os.makedirs(clean_dir, exist_ok=True)
 
     image_files = [f for f in os.listdir(directory) if f.endswith('.png')]
     image_hashes = {}
 
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(),
-        TaskProgressColumn(),
-        console=console
-    ) as progress:
+    if progress is None:
+        progress = Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+            console=console
+        )
+
+    with progress:
         task = progress.add_task("[cyan]Cleaning up similar images...", total=len(image_files))
 
         for filename in image_files:
