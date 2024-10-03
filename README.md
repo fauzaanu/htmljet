@@ -1,18 +1,20 @@
-# HTMLJet 🚀
+# HTMLJet
 
-HTMLJet is a powerful command-line tool for capturing screenshots of HTML elements on web pages. It provides advanced features for analyzing HTML structure, taking screenshots at different levels, and cleaning up similar images.
+HTMLJet is a command-line tool for capturing screenshots of any website. 
 
-## Features
+You would simply run the command 
+`htmljet snap https://example.com`
 
-- 📸 Capture screenshots of HTML elements on web pages
-- 🔍 Analyze HTML structure to determine the most likely component level
-- 🌐 Support for capturing screenshots at all levels of the HTML structure
-- 🧹 Clean up similar images to reduce redundancy
-- 🎭 User-friendly command-line interface with rich output
+Once the page is loaded, HTMLJet will analyze the HTML structure and display the levels and the amount of child elements within each level. You can then choose the level you want to capture screenshots of.
+
+You can also run 
+`htmljet snap https://example.com --all-levels` or `htmljet snap https://example.com -a` to capture screenshots of all levels.
+
+When all levels are captured, the folder will contain a folder for each level, with the screenshots of the elements at that level.
 
 ## Installation
 
-To install HTMLJet, you need Python 3.7 or higher. You can install it using pip:
+To install HTMLJet, you need Python 3.12 or higher. You can install it using pip:
 
 ```bash
 pip install htmljet
@@ -20,72 +22,18 @@ pip install htmljet
 
 ## Usage
 
-HTMLJet provides two main commands: `snap` and `cleanup`.
+Usage is as simple as it was described in the introduction. There are no additional options at the moment.
 
-### Snap Command
+## Use case
 
-The `snap` command captures screenshots of HTML elements on a webpage.
+I created HTMLJet to make it easy for me to feed UI designs to LLMs to recreate them using my frontend frameworks. For instance taking a screenshot of a wordpress website and asking LLMs to create it with tailwindcss.
 
-```bash
-htmljet snap <URL> [OPTIONS]
-```
-
-Options:
-- `--output-dir`: Directory to save screenshots (default: "htmljet")
-- `--all-levels`: Capture screenshots for all levels
-
-Example:
-```bash
-htmljet snap https://example.com --output-dir my_screenshots
-```
-
-### Cleanup Command
-
-The `cleanup` command cleans up similar images in a directory, keeping the larger ones.
-
-```bash
-htmljet cleanup <DIRECTORY> [OPTIONS]
-```
-
-Options:
-- `--similarity-threshold`: Threshold for considering images as similar (0.0 to 1.0, default: 0.9)
-
-Example:
-```bash
-htmljet cleanup my_screenshots --similarity-threshold 0.8
-```
+The idea is that it would save a lot of time if the files are already present locally within your project, compared to having to go to the website and take screenshots manually of each component, add it to the project and then ask the LLMs to recreate it.
 
 ## Development
 
-To set up the development environment:
+Make sure you have uv installed.
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/htmljet.git
-   cd htmljet
-   ```
-
-2. Create a virtual environment and activate it:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
-   ```
-
-3. Install the development dependencies:
-   ```bash
-   pip install -e ".[dev]"
-   ```
-
-4. Run the tests:
-   ```bash
-   python -m unittest discover -v src/htmljet/tests
-   ```
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+1. Clone the repo
+2. run uv sync
 
