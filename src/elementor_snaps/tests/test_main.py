@@ -19,9 +19,9 @@ async def test_take_screenshots():
         mock_page.query_selector_all.return_value = [mock_element]
         mock_element.is_visible.return_value = True
 
-        await take_screenshots("https://elementor.com/", "test_output")
+        await take_screenshots("https://elementor.com", "test_output")
 
-        mock_page.goto.assert_called_once_with("https://elementor.com/")
+        mock_page.goto.assert_called_once_with("https://elementor.com")
         mock_element.screenshot.assert_called_once()
 
 def test_cleanup_similar_images(tmp_path):
@@ -38,10 +38,12 @@ def test_cleanup_similar_images(tmp_path):
     assert len(os.listdir(clean_dir)) == 3  # Assuming all images are unique
 
 def test_snap_command():
-    with patch('elementor_snaps.main.asyncio.run'), \
-         patch('elementor_snaps.main.cleanup_similar_images'):
-        result = runner.invoke(snap, ["http://test.com"])
+    with patch('elementor_snaps.main.asyncio.run') as mock_run, \
+         patch('elementor_snaps.main.cleanup_similar_images') as mock_cleanup:
+        result = runner.invoke(snap, ["https://elementor.com"])
         assert result.exit_code == 0
+        mock_run.assert_called_once()
+        mock_cleanup.assert_called_once()
 
 def test_cleanup_command(tmp_path):
     img_dir = tmp_path / "test_images"
