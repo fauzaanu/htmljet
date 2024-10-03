@@ -20,52 +20,49 @@ async def analyze_html_structure(page):
     soup = BeautifulSoup(html_content, 'html.parser')
     body = soup.body
 
-    def count_children(element):
-        return len([child for child in element.children if child.name is not None])
+    def print_element_hierarchy(elements, level=1):
+        element_dict = {}
+        for i, element in enumerate(elements, 1):
+            if element.name:
+                element_dict[i] = element
+                child_count = len([child for child in element.children if child.name])
+                console.print(f"[bold]{level}.{i}[/bold] {element.name}: {child_count} child elements")
 
-    def print_element_hierarchy(element, level=0):
-        if element.name is None:
-            return
+        return element_dict
 
-        child_count = count_children(element)
-        indent = "  " * level
-        console.print(f"{indent}{element.name}: {child_count} child elements")
-
-        for child in element.children:
-            if child.name is not None:
-                print_element_hierarchy(child, level + 1)
-
-    print_element_hierarchy(body)
+    level = 1
+    current_elements = body.children
+    element_dict = {}
 
     while True:
-        try:
-            level = int(console.input("[bold cyan]Enter the level number to capture (0 for body, 1 for its children, etc.): [/bold cyan]"))
-            if level < 0:
-                console.print("[bold red]Invalid level. Please enter a non-negative integer.[/bold red]")
-                continue
+        console.print(f"\n[cyan]Level {level}:[/cyan]")
+        level_dict = print_element_hierarchy(current_elements, level)
+        element_dict[level] = level_dict
+
+        if not level_dict:
+            console.print("[yellow]No more elements at this level.[/yellow]")
             break
-        except ValueError:
-            console.print("[bold red]Invalid input. Please enter a valid integer.[/bold red]")
 
-    def get_elements_at_level(element, target_level, current_level=0):
-        if current_level == target_level:
-            return [element]
-        
-        elements = []
-        for child in element.children:
-            if child.name is not None:
-                elements.extend(get_elements_at_level(child, target_level, current_level + 1))
-        return elements
+        while True:
+            user_input = console.input("\n[bold cyan]Enter the level number to capture, or 'n' to go deeper: [/bold cyan]")
+            if user_input.lower() == 'n':
+                level += 1
+                current_elements = [child for element in level_dict.values() for child in element.children if child.name]
+                break
+            try:
+                selected_level = int(user_input)
+                if selected_level in element_dict:
+                    selected_elements = element_dict[selected_level].values()
+                    selector = ', '.join([element.name for element in selected_elements])
+                    console.print(f"[bold green]Using selector: {selector}[/bold green]")
+                    return selector
+                else:
+                    console.print("[bold red]Invalid level. Please enter a valid level number.[/bold red]")
+            except ValueError:
+                console.print("[bold red]Invalid input. Please enter a valid level number or 'n'.[/bold red]")
 
-    elements_at_level = get_elements_at_level(body, level)
-    
-    if not elements_at_level:
-        console.print(f"[bold yellow]No elements found at level {level}. Using 'body > *' as fallback.[/bold yellow]")
-        return 'body > *'
-
-    selector = ', '.join([element.name for element in elements_at_level])
-    console.print(f"[bold green]Using selector: {selector}[/bold green]")
-    return selector
+    console.print("[bold yellow]No elements selected. Using 'body > *' as fallback.[/bold yellow]")
+    return 'body > *'
 
 async def take_screenshots(url: str, output_dir: str):
     async with async_playwright() as p:
