@@ -15,6 +15,71 @@ console = Console()
 # Global variable to store the Progress object
 progress = None
 
+async def take_screenshots_all_levels(url: str, output_dir: str):
+    async with async_playwright() as p:
+        browser = await p.chromium.launch_persistent_context(
+            user_data_dir="browser",
+            headless=False,
+        )
+        page = await browser.new_page()
+
+        with console.status(f"[bold green]🌐 Loading page: {url}[/bold green]"):
+            await page.goto(url)
+            await page.wait_for_load_state("networkidle")
+
+        html_content = await page.content()
+        soup = BeautifulSoup(html_content, 'html.parser')
+        body = soup.body
+
+        def count_elements_by_level(element, current_level=1):
+            level_counts = {current_level: 0}
+            for child in element.children:
+                if child.name:
+                    level_counts[current_level] += 1
+                    child_counts = count_elements_by_level(child, current_level + 1)
+                    for level, count in child_counts.items():
+                        level_counts[level] = level_counts.get(level, 0) + count
+            return level_counts
+
+        element_counts = count_elements_by_level(body)
+
+        for level in sorted(element_counts.keys()):
+            level_dir = os.path.join(output_dir, f"level_{level}")
+            os.makedirs(level_dir, exist_ok=True)
+
+            selector = f"body {'> *' * (level - 1)}"
+            elements = await page.query_selector_all(selector)
+
+            console.print(f"[bold cyan]🔍 Found {len(elements)} elements at level {level}[/bold cyan]")
+
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TaskProgressColumn(),
+                console=console
+            ) as progress:
+                task = progress.add_task(f"[cyan]Taking screenshots for level {level}...", total=len(elements))
+
+                for i, element in enumerate(elements):
+                    try:
+                        if not await element.is_visible():
+                            console.print(f"[yellow]⚠️  Element {i} at level {level} is not visible, skipping...[/yellow]")
+                            progress.advance(task)
+                            continue
+
+                        await element.screenshot(path=f"{level_dir}/element_{i}.png")
+                    except TimeoutError:
+                        console.print(f"[red]⏱️  Timeout error occurred for element {i} at level {level}[/red]")
+                    except Exception as e:
+                        console.print(f"[red]❌ Error capturing screenshot for element {i} at level {level}: {str(e)}[/red]")
+
+                    progress.advance(task)
+
+        await browser.close()
+
+        console.print("[bold green]✅ Screenshot capture for all levels complete![/bold green]")
+
 async def analyze_html_structure(page):
     html_content = await page.content()
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -200,7 +265,8 @@ def cleanup_similar_images(directory: str, similarity_threshold: float = 0.5):
 @app.command()
 def snap(
     url: str = typer.Argument(..., help="The URL of the web page to screenshot"),
-    output_dir: str = typer.Option("htmljet", help="Directory to save screenshots", show_default=True)
+    output_dir: str = typer.Option("htmljet", help="Directory to save screenshots", show_default=True),
+    all_levels: bool = typer.Option(False, "--all-levels", "-a", help="Capture screenshots for all levels")
 ):
     """
     📸 Capture screenshots of HTML elements on a webpage.
@@ -208,12 +274,14 @@ def snap(
     console.print("[bold magenta]🎭 Welcome to HTMLJET![/bold magenta]")
     console.print(f"[italic]Preparing to capture elements from {url}[/italic]")
 
-    asyncio.run(take_screenshots(url, output_dir))
-
-    console.print("[bold green]🎉 Screenshots captured! Now cleaning up similar images...[/bold green]")
-    clean_dir = cleanup_similar_images(output_dir)
-
-    console.print(f"[bold green]🎉 All done! Your cleaned-up screenshots are saved in the '{clean_dir}' directory.[/bold green]")
+    if all_levels:
+        asyncio.run(take_screenshots_all_levels(url, output_dir))
+        console.print(f"[bold green]🎉 All done! Your screenshots for all levels are saved in the '{output_dir}' directory.[/bold green]")
+    else:
+        asyncio.run(take_screenshots(url, output_dir))
+        console.print("[bold green]🎉 Screenshots captured! Now cleaning up similar images...[/bold green]")
+        clean_dir = cleanup_similar_images(output_dir)
+        console.print(f"[bold green]🎉 All done! Your cleaned-up screenshots are saved in the '{clean_dir}' directory.[/bold green]")
 
 @app.command()
 def cleanup(
