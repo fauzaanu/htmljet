@@ -11,6 +11,7 @@ May your screenshots be ever crisp and your designs ever inspiring! ✨
 
 import asyncio
 import os
+import shutil
 from typing import Optional
 import typer
 from rich.console import Console
@@ -77,11 +78,15 @@ async def take_screenshots(url: str, output_dir: str):
 
 def cleanup_similar_images(directory: str, similarity_threshold: float = 0.9):
     """
-    Remove similar images from the given directory, keeping the larger ones.
+    Copy unique images to a new 'clean' directory, keeping the larger ones when similar.
     
     :param directory: Directory containing the images
     :param similarity_threshold: Threshold for considering images as similar (0.0 to 1.0)
+    :return: Path to the new 'clean' directory
     """
+    clean_dir = os.path.join(directory, "clean")
+    os.makedirs(clean_dir, exist_ok=True)
+    
     image_files = [f for f in os.listdir(directory) if f.endswith('.png')]
     image_hashes = {}
 
@@ -103,18 +108,23 @@ def cleanup_similar_images(directory: str, similarity_threshold: float = 0.9):
                 for existing_hash, (existing_file, existing_size) in image_hashes.items():
                     if (hash - existing_hash) / len(hash.hash) ** 2 <= 1 - similarity_threshold:
                         if img_size > existing_size:
-                            os.remove(existing_file)
                             image_hashes[hash] = (file_path, img_size)
-                        else:
-                            os.remove(file_path)
                         break
                 else:
                     image_hashes[hash] = (file_path, img_size)
             
             progress.advance(task)
 
-    removed_count = len(image_files) - len(image_hashes)
-    console.print(f"[bold green]🧹 Cleanup complete! Removed {removed_count} similar images.[/bold green]")
+        # Copy unique images to clean directory
+        for file_path, _ in image_hashes.values():
+            shutil.copy2(file_path, clean_dir)
+
+    unique_count = len(image_hashes)
+    removed_count = len(image_files) - unique_count
+    console.print(f"[bold green]🧹 Cleanup complete! Copied {unique_count} unique images to '{clean_dir}'.[/bold green]")
+    console.print(f"[bold green]🗑️ {removed_count} similar images were not copied.[/bold green]")
+    
+    return clean_dir
 
 @app.command()
 def snap(
@@ -130,9 +140,9 @@ def snap(
     asyncio.run(take_screenshots(url, output_dir))
     
     console.print(f"[bold green]🎉 Screenshots captured! Now cleaning up similar images...[/bold green]")
-    cleanup_similar_images(output_dir)
+    clean_dir = cleanup_similar_images(output_dir)
     
-    console.print(f"[bold green]🎉 All done! Your cleaned-up screenshots are saved in the '{output_dir}' directory.[/bold green]")
+    console.print(f"[bold green]🎉 All done! Your cleaned-up screenshots are saved in the '{clean_dir}' directory.[/bold green]")
     console.print("[bold]Happy designing! 🎨✨[/bold]")
 
 @app.command()
