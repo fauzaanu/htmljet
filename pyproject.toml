@@ -1,7 +1,7 @@
 [project]
 name = "elementor-snaps"
 version = "0.1.0"
-description = "Add your description here"
+description = "A CLI tool to take screenshots of Elementor pages"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -15,4 +15,9 @@ dependencies = [
 [tool.uv]
 dev-dependencies = [
     "aider-chat>=0.58.1",
+    "ruff>=0.6.8",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
