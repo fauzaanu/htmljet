@@ -135,6 +135,22 @@ def snap(
     console.print(f"[bold green]🎉 All done! Your cleaned-up screenshots are saved in the '{output_dir}' directory.[/bold green]")
     console.print("[bold]Happy designing! 🎨✨[/bold]")
 
+@app.command()
+def cleanup(
+    directory: str = typer.Argument(..., help="The directory containing images to clean up"),
+    similarity_threshold: float = typer.Option(0.9, help="Threshold for considering images as similar (0.0 to 1.0)", min=0.0, max=1.0)
+):
+    """
+    🧹 Clean up similar images in a directory, keeping the larger ones.
+    """
+    console.print(f"[bold magenta]🎭 Welcome to Elementor Snaps Cleanup![/bold magenta]")
+    console.print(f"[italic]Preparing to clean up similar images in {directory}[/italic]")
+    
+    cleanup_similar_images(directory, similarity_threshold)
+    
+    console.print(f"[bold green]🎉 All done! Your cleaned-up images are in the '{directory}' directory.[/bold green]")
+    console.print("[bold]Happy organizing! 🗂️✨[/bold]")
+
 if __name__ == "__main__":
     app()
 

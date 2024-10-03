@@ -44,6 +44,8 @@ This script automates the process of capturing screenshots of individual Element
 
 ## 🎮 Usage
 
+### Capturing Screenshots
+
 Run the script from the command line, providing the URL of the Elementor page you want to capture:
 
 ```
@@ -56,6 +58,22 @@ Options:
 Example with custom output directory:
 ```
 python main.py snap https://example.com/elementor-page --output-dir my_screenshots
+```
+
+### Cleaning Up Existing Images
+
+To clean up similar images in an existing directory:
+
+```
+python main.py cleanup /path/to/your/image/directory
+```
+
+Options:
+- `--similarity-threshold`: Specify the threshold for considering images as similar (default: 0.9, range: 0.0 to 1.0)
+
+Example with custom similarity threshold:
+```
+python main.py cleanup /path/to/your/image/directory --similarity-threshold 0.95
 ```
 
 ## 📤 Output
