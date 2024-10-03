@@ -26,9 +26,13 @@ class TestHtmlJet(unittest.TestCase):
             mock_element.is_visible.return_value = True
             mock_analyze.return_value = 'body > *'
 
+            # Mock the evaluate method to simulate a non-script element
+            mock_page.evaluate.return_value = False
+
             await take_screenshots("https://example.com", "test_output")
 
             mock_page.goto.assert_called_once_with("https://example.com")
+            mock_page.evaluate.assert_called_once()
             mock_element.screenshot.assert_called_once()
 
         asyncio.run(run_test())
