@@ -30,8 +30,8 @@ async def take_screenshots(url):
         # Wait for the page to load completely
         await page.wait_for_load_state("networkidle")
 
-        # Find all elements with class "elementor-element"
-        elements = await page.query_selector_all(".elementor-element")
+        # Find all elements with attribute data-element_type="container"
+        elements = await page.query_selector_all('[data-element_type="container"]')
 
         # Create a directory for screenshots if it doesn't exist
         os.makedirs("elementor_screenshots", exist_ok=True)
