@@ -19,7 +19,11 @@ import argparse
 
 async def take_screenshots(url):
     async with async_playwright() as p:
-        browser = await p.chromium.launch()
+        browser = browser = await p.chromium.launch_persistent_context(
+            user_data_dir="browser",
+            headless=False,
+            # viewport={"width": 500, "height": 500},
+        )
         page = await browser.new_page()
         await page.goto(url)
 
