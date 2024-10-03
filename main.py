@@ -1,77 +1,95 @@
 """
-elementor_snaps is a python script designed to take screenshots of Elementor pages.
+🎨 Elementor Snaps: Capture the beauty of Elementor pages! 📸
 
-By default we are targeing the html attribute of [data-element_type="container"]
+This magical script automates the process of taking screenshots of Elementor pages.
+It's perfect for recreating UI designs or analyzing layouts using LLMs.
 
-Why?
----
-This script was created to automate the process of taking screenshots of Elementor pages. This is useful for recreating
-the UI of elementor websites using LLMs for other purposes.
+By default, we're targeting elements with the attribute [data-element_type="container"].
 
-The project only has one dependency, which is the playwright library.
+May your screenshots be ever crisp and your designs ever inspiring! ✨
 """
 
 import asyncio
-from playwright.async_api import async_playwright, TimeoutError
 import os
-import argparse
-import logging
+from typing import Optional
+import typer
+from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+from playwright.async_api import async_playwright, TimeoutError
 
-# Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+app = typer.Typer(help="🚀 Elementor Snaps: Capture Elementor magic with ease!")
+console = Console()
 
-async def take_screenshots(url):
+async def take_screenshots(url: str, output_dir: str):
     async with async_playwright() as p:
         browser = await p.chromium.launch_persistent_context(
             user_data_dir="browser",
             headless=False,
         )
         page = await browser.new_page()
-        await page.goto(url)
+        
+        with console.status(f"[bold green]🌐 Loading page: {url}[/bold green]"):
+            await page.goto(url)
+            await page.wait_for_load_state("networkidle")
 
-        # Wait for the page to load completely
-        await page.wait_for_load_state("networkidle")
-
-        # Find all elements with attribute data-element_type="container"
         elements = await page.query_selector_all('[data-element_type="container"]')
+        console.print(f"[bold cyan]🔍 Found {len(elements)} elements[/bold cyan]")
 
-        logging.info(f"Found {len(elements)} elements")
-
-        # Create a directory for screenshots if it doesn't exist
-        os.makedirs("elementor_screenshots", exist_ok=True)
+        os.makedirs(output_dir, exist_ok=True)
 
         successful_screenshots = 0
         failed_screenshots = 0
 
-        for i, element in enumerate(elements):
-            try:
-                # Check if the element is visible
-                is_visible = await element.is_visible()
-                if not is_visible:
-                    logging.warning(f"Element {i} is not visible, skipping...")
-                    failed_screenshots += 1
-                    continue
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+            console=console
+        ) as progress:
+            task = progress.add_task("[cyan]Taking screenshots...", total=len(elements))
 
-                # Take a screenshot of each element
-                await element.screenshot(path=f"elementor_screenshots/element_{i}.png", timeout=5000)
-                logging.info(f"Successfully captured screenshot for element {i}")
-                successful_screenshots += 1
-            except TimeoutError:
-                logging.error(f"Timeout error occurred while capturing screenshot for element {i}")
-                failed_screenshots += 1
-            except Exception as e:
-                logging.error(f"Error occurred while capturing screenshot for element {i}: {str(e)}")
-                failed_screenshots += 1
+            for i, element in enumerate(elements):
+                try:
+                    if not await element.is_visible():
+                        console.print(f"[yellow]⚠️  Element {i} is not visible, skipping...[/yellow]")
+                        failed_screenshots += 1
+                        progress.advance(task)
+                        continue
+
+                    await element.screenshot(path=f"{output_dir}/element_{i}.png", timeout=5000)
+                    successful_screenshots += 1
+                except TimeoutError:
+                    console.print(f"[red]⏱️  Timeout error occurred for element {i}[/red]")
+                    failed_screenshots += 1
+                except Exception as e:
+                    console.print(f"[red]❌ Error capturing screenshot for element {i}: {str(e)}[/red]")
+                    failed_screenshots += 1
+                
+                progress.advance(task)
 
         await browser.close()
 
-        logging.info(f"Screenshot capture complete. Successful: {successful_screenshots}, Failed: {failed_screenshots}")
+        console.print(f"[bold green]✅ Screenshot capture complete![/bold green]")
+        console.print(f"[green]📊 Successful: {successful_screenshots}, Failed: {failed_screenshots}[/green]")
+
+@app.command()
+def snap(
+    url: str = typer.Argument(..., help="The URL of the Elementor page to screenshot"),
+    output_dir: str = typer.Option("elementor_screenshots", help="Directory to save screenshots", show_default=True)
+):
+    """
+    📸 Capture screenshots of Elementor containers on a webpage.
+    """
+    console.print(f"[bold magenta]🎭 Welcome to Elementor Snaps![/bold magenta]")
+    console.print(f"[italic]Preparing to capture the essence of {url}[/italic]")
+    
+    asyncio.run(take_screenshots(url, output_dir))
+    
+    console.print(f"[bold green]🎉 All done! Your screenshots are saved in the '{output_dir}' directory.[/bold green]")
+    console.print("[bold]Happy designing! 🎨✨[/bold]")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Take screenshots of Elementor elements on a webpage.")
-    parser.add_argument("url", help="The URL of the webpage to screenshot")
-    args = parser.parse_args()
-
-    asyncio.run(take_screenshots(args.url))
+    app()
 
 
