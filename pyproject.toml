@@ -18,6 +18,9 @@ dev-dependencies = [
     "ruff>=0.6.8",
 ]
 
+[project.scripts]
+elementor_snaps = "elementor_snaps.main:app"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
