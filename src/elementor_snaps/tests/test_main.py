@@ -43,12 +43,15 @@ class TestElementorSnaps(unittest.TestCase):
             self.assertTrue(os.path.exists(clean_dir))
             self.assertEqual(len(os.listdir(clean_dir)), 1)  # Assuming all images are similar
 
-    @patch('elementor_snaps.main.asyncio.run')
+    @patch('elementor_snaps.main.take_screenshots')
     @patch('elementor_snaps.main.cleanup_similar_images')
-    def test_snap_command(self, mock_cleanup, mock_run):
+    def test_snap_command(self, mock_cleanup, mock_take_screenshots):
+        mock_take_screenshots.return_value = asyncio.Future()
+        mock_take_screenshots.return_value.set_result(None)
+        
         result = self.runner.invoke(self.app, ["snap", "https://elementor.com"])
         self.assertEqual(result.exit_code, 0)
-        mock_run.assert_called_once()
+        mock_take_screenshots.assert_called_once()
         mock_cleanup.assert_called_once()
 
     @patch('elementor_snaps.main.cleanup_similar_images')
