@@ -1,14 +1,3 @@
-"""
-🎨 Elementor Snaps: Capture the beauty of Elementor pages! 📸
-
-This magical script automates the process of taking screenshots of Elementor pages.
-It's perfect for recreating UI designs or analyzing layouts using LLMs.
-
-By default, we're targeting elements with the attribute [data-element_type="container"].
-
-May your screenshots be ever crisp and your designs ever inspiring! ✨
-"""
-
 import asyncio
 import os
 import shutil
@@ -20,7 +9,7 @@ from playwright.async_api import async_playwright, TimeoutError
 from PIL import Image
 import imagehash
 
-app = typer.Typer(help="🚀 Elementor Snaps: Capture Elementor magic with ease!")
+app = typer.Typer(help="🚀 Elementor Snaps: Capture Elementor UI elements as screenshots")
 console = Console()
 
 async def take_screenshots(url: str, output_dir: str):
@@ -30,7 +19,7 @@ async def take_screenshots(url: str, output_dir: str):
             headless=False,
         )
         page = await browser.new_page()
-        
+
         with console.status(f"[bold green]🌐 Loading page: {url}[/bold green]"):
             await page.goto(url)
             await page.wait_for_load_state("networkidle")
@@ -68,7 +57,7 @@ async def take_screenshots(url: str, output_dir: str):
                 except Exception as e:
                     console.print(f"[red]❌ Error capturing screenshot for element {i}: {str(e)}[/red]")
                     failed_screenshots += 1
-                
+
                 progress.advance(task)
 
         await browser.close()
@@ -76,17 +65,17 @@ async def take_screenshots(url: str, output_dir: str):
         console.print(f"[bold green]✅ Screenshot capture complete![/bold green]")
         console.print(f"[green]📊 Successful: {successful_screenshots}, Failed: {failed_screenshots}[/green]")
 
-def cleanup_similar_images(directory: str, similarity_threshold: float = 0.9):
+def cleanup_similar_images(directory: str, similarity_threshold: float = 0.5):
     """
     Copy unique images to a new 'clean' directory, keeping the larger ones when similar.
-    
+
     :param directory: Directory containing the images
     :param similarity_threshold: Threshold for considering images as similar (0.0 to 1.0)
     :return: Path to the new 'clean' directory
     """
     clean_dir = os.path.join(directory, "clean")
     os.makedirs(clean_dir, exist_ok=True)
-    
+
     image_files = [f for f in os.listdir(directory) if f.endswith('.png')]
     image_hashes = {}
 
@@ -104,7 +93,7 @@ def cleanup_similar_images(directory: str, similarity_threshold: float = 0.9):
             with Image.open(file_path) as img:
                 hash = imagehash.average_hash(img)
                 img_size = os.path.getsize(file_path)
-                
+
                 for existing_hash, (existing_file, existing_size) in image_hashes.items():
                     if (hash - existing_hash) / len(hash.hash) ** 2 <= 1 - similarity_threshold:
                         if img_size > existing_size:
@@ -112,7 +101,7 @@ def cleanup_similar_images(directory: str, similarity_threshold: float = 0.9):
                         break
                 else:
                     image_hashes[hash] = (file_path, img_size)
-            
+
             progress.advance(task)
 
         # Copy unique images to clean directory
@@ -123,7 +112,7 @@ def cleanup_similar_images(directory: str, similarity_threshold: float = 0.9):
     removed_count = len(image_files) - unique_count
     console.print(f"[bold green]🧹 Cleanup complete! Copied {unique_count} unique images to '{clean_dir}'.[/bold green]")
     console.print(f"[bold green]🗑️ {removed_count} similar images were not copied.[/bold green]")
-    
+
     return clean_dir
 
 @app.command()
@@ -136,12 +125,12 @@ def snap(
     """
     console.print(f"[bold magenta]🎭 Welcome to Elementor Snaps![/bold magenta]")
     console.print(f"[italic]Preparing to capture the essence of {url}[/italic]")
-    
+
     asyncio.run(take_screenshots(url, output_dir))
-    
+
     console.print(f"[bold green]🎉 Screenshots captured! Now cleaning up similar images...[/bold green]")
     clean_dir = cleanup_similar_images(output_dir)
-    
+
     console.print(f"[bold green]🎉 All done! Your cleaned-up screenshots are saved in the '{clean_dir}' directory.[/bold green]")
     console.print("[bold]Happy designing! 🎨✨[/bold]")
 
@@ -155,11 +144,11 @@ def cleanup(
     """
     console.print(f"[bold magenta]🎭 Welcome to Elementor Snaps Cleanup![/bold magenta]")
     console.print(f"[italic]Preparing to clean up similar images in {directory}[/italic]")
-    
+
     cleanup_similar_images(directory, similarity_threshold)
-    
+
     console.print(f"[bold green]🎉 All done! Your cleaned-up images are in the '{directory}' directory.[/bold green]")
-    console.print("[bold]Happy organizing! 🗂️✨[/bold]")
+    console.print("[bold]Happy coding! 🗂️✨[/bold]")
 
 if __name__ == "__main__":
     app()
