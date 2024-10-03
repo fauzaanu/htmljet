@@ -40,18 +40,17 @@ async def analyze_html_structure(page):
         likely_level = 1
         reason = "First layer is the most likely"
         
-        for i in range(1, len(levels)):
+        max_count = counts[1]
+        for i in range(2, len(levels)):
             prev_count = counts[levels[i-1]]
             curr_count = counts[levels[i]]
             
-            if curr_count < prev_count:
+            if curr_count < prev_count and prev_count >= max_count * 0.5:
                 likely_level = levels[i-1]
-                reason = f"Level before decrease at level {levels[i]}"
+                reason = f"Significant decrease after level {levels[i-1]}"
                 break
             
-            if i == len(levels) - 1 and curr_count > prev_count:
-                likely_level = levels[i]
-                reason = "Last level with constant increase"
+            max_count = max(max_count, curr_count)
 
         return likely_level, reason
 
