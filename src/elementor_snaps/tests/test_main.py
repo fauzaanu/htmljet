@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, patch, MagicMock
 import asyncio
 import os
 import tempfile
+from PIL import Image
 from elementor_snaps.main import take_screenshots, cleanup_similar_images, app
 from typer.testing import CliRunner
 
