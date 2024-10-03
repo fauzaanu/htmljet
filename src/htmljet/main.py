@@ -32,21 +32,55 @@ async def analyze_html_structure(page):
 
     element_counts = count_elements_by_level(body)
 
+    def analyze_likely_component_level(counts):
+        levels = sorted(counts.keys())
+        if len(levels) <= 1:
+            return 1, "Only one level present"
+
+        likely_level = 1
+        reason = "First layer is the most likely"
+        
+        for i in range(1, len(levels)):
+            prev_count = counts[levels[i-1]]
+            curr_count = counts[levels[i]]
+            
+            if curr_count < prev_count:
+                likely_level = levels[i-1]
+                reason = f"Level before decrease at level {levels[i]}"
+                break
+            
+            if i == len(levels) - 1 and curr_count > prev_count:
+                likely_level = levels[i]
+                reason = "Last level with constant increase"
+
+        return likely_level, reason
+
+    likely_level, reason = analyze_likely_component_level(element_counts)
+
     for level, count in sorted(element_counts.items()):
-        console.print(f"[cyan]Level {level}: {count} elements[/cyan]")
+        likeliness = "[bold magenta]LIKELY[/bold magenta]" if level == likely_level else ""
+        console.print(f"[cyan]Level {level}: {count} elements[/cyan] {likeliness}")
+
+    console.print(f"\n[bold yellow]Most likely component level: {likely_level}[/bold yellow]")
+    console.print(f"[italic]Reason: {reason}[/italic]\n")
 
     while True:
-        user_input = console.input("\n[bold cyan]Enter the level number to capture: [/bold cyan]")
-        try:
-            selected_level = int(user_input)
-            if selected_level in element_counts:
-                selector = f"body {'> *' * (selected_level - 1)}"
-                console.print(f"[bold green]Using selector: {selector}[/bold green]")
-                return selector
-            else:
-                console.print("[bold red]Invalid level. Please enter a valid level number.[/bold red]")
-        except ValueError:
-            console.print("[bold red]Invalid input. Please enter a valid level number.[/bold red]")
+        user_input = console.input("\n[bold cyan]Enter the level number to capture (or press Enter for the likely level): [/bold cyan]")
+        if user_input == "":
+            selected_level = likely_level
+        else:
+            try:
+                selected_level = int(user_input)
+            except ValueError:
+                console.print("[bold red]Invalid input. Please enter a valid level number or press Enter.[/bold red]")
+                continue
+
+        if selected_level in element_counts:
+            selector = f"body {'> *' * (selected_level - 1)}"
+            console.print(f"[bold green]Using selector: {selector}[/bold green]")
+            return selector
+        else:
+            console.print("[bold red]Invalid level. Please enter a valid level number.[/bold red]")
 
     console.print("[bold yellow]No elements selected. Using 'body > *' as fallback.[/bold yellow]")
     return 'body > *'
