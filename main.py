@@ -13,16 +13,19 @@ The project only has one dependency, which is the playwright library.
 """
 
 import asyncio
-from playwright.async_api import async_playwright
+from playwright.async_api import async_playwright, TimeoutError
 import os
 import argparse
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 async def take_screenshots(url):
     async with async_playwright() as p:
-        browser = browser = await p.chromium.launch_persistent_context(
+        browser = await p.chromium.launch_persistent_context(
             user_data_dir="browser",
             headless=False,
-            # viewport={"width": 500, "height": 500},
         )
         page = await browser.new_page()
         await page.goto(url)
@@ -33,16 +36,37 @@ async def take_screenshots(url):
         # Find all elements with attribute data-element_type="container"
         elements = await page.query_selector_all('[data-element_type="container"]')
 
-        print(f"Found {len(elements)} elements")
+        logging.info(f"Found {len(elements)} elements")
 
         # Create a directory for screenshots if it doesn't exist
         os.makedirs("elementor_screenshots", exist_ok=True)
 
+        successful_screenshots = 0
+        failed_screenshots = 0
+
         for i, element in enumerate(elements):
-            # Take a screenshot of each element
-            await element.screenshot(path=f"elementor_screenshots/element_{i}.png")
+            try:
+                # Check if the element is visible
+                is_visible = await element.is_visible()
+                if not is_visible:
+                    logging.warning(f"Element {i} is not visible, skipping...")
+                    failed_screenshots += 1
+                    continue
+
+                # Take a screenshot of each element
+                await element.screenshot(path=f"elementor_screenshots/element_{i}.png", timeout=5000)
+                logging.info(f"Successfully captured screenshot for element {i}")
+                successful_screenshots += 1
+            except TimeoutError:
+                logging.error(f"Timeout error occurred while capturing screenshot for element {i}")
+                failed_screenshots += 1
+            except Exception as e:
+                logging.error(f"Error occurred while capturing screenshot for element {i}: {str(e)}")
+                failed_screenshots += 1
 
         await browser.close()
+
+        logging.info(f"Screenshot capture complete. Successful: {successful_screenshots}, Failed: {failed_screenshots}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Take screenshots of Elementor elements on a webpage.")
