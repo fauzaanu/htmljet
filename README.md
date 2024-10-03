@@ -1,21 +1,16 @@
-# 🎨 Elementor Snaps
+# Elementor Snaps
 
-Elementor Snaps is a beautiful Python CLI tool designed to take screenshots of Elementor pages automatically. It's particularly useful for recreating the UI of Elementor websites using LLMs for other purposes.
+Elementor Snaps is a Python CLI tool for automatically capturing screenshots of Elementor pages. It's designed to assist in analyzing or replicating Elementor-based layouts.
 
-## ✨ Why?
+## Features
 
-This script automates the process of capturing screenshots of individual Elementor components. It's a valuable tool for developers, designers, or anyone needing to analyze or replicate Elementor-based layouts.
+- Automatically captures screenshots of Elementor containers on a given webpage
+- Handles visibility checks to ensure only visible elements are captured
+- Implements error handling for robust operation
+- Configurable through a command-line interface
+- Automatic cleanup of similar images, keeping the larger ones
 
-## 🚀 Features
-
-- 📸 Automatically captures screenshots of Elementor containers on a given webpage
-- 👁️ Handles visibility checks to ensure only visible elements are captured
-- 🛡️ Implements error handling for robust operation
-- 🎛️ Configurable through an intuitive command-line interface
-- 🌈 Beautiful, colorful output with progress bars and emojis
-- 🧹 Automatic cleanup of similar images, keeping the larger ones
-
-## 📋 Requirements
+## Requirements
 
 - Python 3.7+
 - Playwright library
@@ -24,7 +19,7 @@ This script automates the process of capturing screenshots of individual Element
 - Pillow
 - ImageHash
 
-## 🛠️ Installation
+## Installation
 
 1. Clone this repository:
    ```
@@ -42,7 +37,7 @@ This script automates the process of capturing screenshots of individual Element
    playwright install
    ```
 
-## 🎮 Usage
+## Usage
 
 ### Capturing Screenshots
 
@@ -55,11 +50,6 @@ python main.py snap https://example.com/elementor-page
 Options:
 - `--output-dir`: Specify a custom directory for saving screenshots (default: "elementor_screenshots")
 
-Example with custom output directory:
-```
-python main.py snap https://example.com/elementor-page --output-dir my_screenshots
-```
-
 ### Cleaning Up Existing Images
 
 To clean up similar images in an existing directory:
@@ -71,32 +61,22 @@ python main.py cleanup /path/to/your/image/directory
 Options:
 - `--similarity-threshold`: Specify the threshold for considering images as similar (default: 0.9, range: 0.0 to 1.0)
 
-Example with custom similarity threshold:
-```
-python main.py cleanup /path/to/your/image/directory --similarity-threshold 0.95
-```
+## Output
 
-## 📤 Output
-
-- Screenshots are saved as PNG files in the specified output directory (default: `elementor_screenshots`)
+- Screenshots are saved as PNG files in the specified output directory
 - Each screenshot is named `element_X.png`, where X is the index of the Elementor container
-- The script provides colorful, emoji-rich output about the progress and results of the screenshot capture process
-- Similar images are automatically cleaned up, keeping the larger ones to avoid redundancy
+- Similar images are automatically cleaned up, keeping the larger ones
 
-## ⚠️ Limitations
+## Limitations
 
-- The script currently focuses on elements with the attribute `data-element_type="container"`
+- The script focuses on elements with the attribute `data-element_type="container"`
 - Some elements might not be captured if they're not visible when the script runs
 - The image similarity cleanup process may occasionally remove unique images if they are very similar to others
 
-## 🤝 Contributing
+## Contributing
 
-Contributions to improve Elementor Snaps are welcome! Please feel free to submit pull requests or open issues to suggest improvements or report bugs.
+Contributions to improve Elementor Snaps are welcome. Please submit pull requests or open issues to suggest improvements or report bugs.
 
-## 📜 License
+## License
 
 [MIT License](LICENSE)
-
-## 🎉 Enjoy using Elementor Snaps!
-
-We hope this tool brings a smile to your face while making your Elementor-based design work easier and more enjoyable! 🌟
