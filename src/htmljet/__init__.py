@@ -1,3 +1,3 @@
-from .main import snap, cleanup, take_screenshots, cleanup_similar_images, analyze_html_structure
+from .main import snap, take_screenshots, analyze_html_structure
 
-__all__ = ['snap', 'cleanup', 'take_screenshots', 'cleanup_similar_images', 'analyze_html_structure']
+__all__ = ['snap', 'take_screenshots', 'analyze_html_structure']

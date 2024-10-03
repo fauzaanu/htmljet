@@ -217,62 +217,6 @@ async def take_screenshots(url: str, output_dir: str):
         console.print("[bold green]✅ Screenshot capture complete![/bold green]")
         console.print(f"[green]📊 Successful: {successful_screenshots}, Failed: {failed_screenshots}, Skipped scripts: {skipped_scripts}[/green]")
 
-def cleanup_similar_images(directory: str, similarity_threshold: float = 0.5):
-    """
-    Copy unique images to a new 'clean' directory, keeping the larger ones when similar.
-
-    :param directory: Directory containing the images
-    :param similarity_threshold: Threshold for considering images as similar (0.0 to 1.0)
-    :return: Path to the new 'clean' directory
-    """
-    global progress
-    clean_dir = os.path.join(directory, "clean")
-    os.makedirs(clean_dir, exist_ok=True)
-
-    image_files = [f for f in os.listdir(directory) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))]
-    image_hashes = {}
-
-    if progress is None:
-        progress = Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
-            TaskProgressColumn(),
-            console=console
-        )
-
-    with progress:
-        task = progress.add_task("[cyan]Cleaning up similar images...", total=len(image_files))
-
-        for filename in image_files:
-            file_path = os.path.join(directory, filename)
-            try:
-                with Image.open(file_path) as img:
-                    hash = imagehash.average_hash(img)
-                    img_size = os.path.getsize(file_path)
-
-                    for existing_hash, (existing_file, existing_size) in image_hashes.items():
-                        if (hash - existing_hash) / len(hash.hash) ** 2 <= 1 - similarity_threshold:
-                            if img_size > existing_size:
-                                image_hashes[hash] = (file_path, img_size)
-                            break
-                    else:
-                        image_hashes[hash] = (file_path, img_size)
-            except Exception as e:
-                console.print(f"[yellow]Warning: Could not process '{filename}': {str(e)}[/yellow]")
-
-            progress.advance(task)
-
-        # Copy unique images to clean directory
-        for file_path, _ in image_hashes.values():
-            shutil.copy2(file_path, clean_dir)
-
-    unique_count = len(image_hashes)
-    removed_count = len(image_files) - unique_count
-    console.print(f"[bold green]🧹 Cleanup complete! Copied {unique_count} unique images to '{clean_dir}'.[/bold green]")
-    console.print(f"[bold green]🗑️ {removed_count} similar images were not copied.[/bold green]")
-
-    return clean_dir
 
 @app.command()
 def snap(
@@ -288,35 +232,10 @@ def snap(
 
     if all_levels:
         asyncio.run(take_screenshots_all_levels(url, output_dir))
-        console.print(f"[bold green]🎉 All done! Your screenshots for all levels are saved in the '{output_dir}' directory.[/bold green]")
     else:
         asyncio.run(take_screenshots(url, output_dir))
-        console.print("[bold green]🎉 Screenshots captured! Now cleaning up similar images...[/bold green]")
-        clean_dir = cleanup_similar_images(output_dir)
-        console.print(f"[bold green]🎉 All done! Your cleaned-up screenshots are saved in the '{clean_dir}' directory.[/bold green]")
-
-@app.command()
-def cleanup(
-    directory: str = typer.Argument(".", help="The directory containing images to clean up (default: current directory)"),
-    similarity_threshold: float = typer.Option(0.9, help="Threshold for considering images as similar (0.0 to 1.0)", min=0.0, max=1.0)
-):
-    """
-    🧹 Clean up similar images in a directory, keeping the larger ones.
-    """
-    console.print("[bold magenta]🎭 Welcome to HTMLJET Cleanup![/bold magenta]")
-
-    # Convert to absolute path
-    abs_directory = os.path.abspath(directory)
-    console.print(f"[italic]Preparing to clean up similar images in {abs_directory}[/italic]")
-
-    if not os.path.exists(abs_directory):
-        console.print(f"[bold red]Error: The directory '{abs_directory}' does not exist.[/bold red]")
-        return
-
-    cleanup_similar_images(abs_directory, similarity_threshold)
-
-    console.print(f"[bold green]🎉 All done! Your cleaned-up images are in the '{abs_directory}' directory.[/bold green]")
-    console.print("[bold]Happy coding! 🗂️✨[/bold]")
+    
+    console.print(f"[bold green]🎉 All done! Your screenshots are saved in the '{output_dir}' directory.[/bold green]")
 
 if __name__ == "__main__":
     app()
