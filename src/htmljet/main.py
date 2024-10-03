@@ -170,6 +170,7 @@ async def take_screenshots(url: str, output_dir: str):
 
         successful_screenshots = 0
         failed_screenshots = 0
+        skipped_scripts = 0
 
         with Progress(
             SpinnerColumn(),
@@ -188,6 +189,17 @@ async def take_screenshots(url: str, output_dir: str):
                         progress.advance(task)
                         continue
 
+                    # Check if the element is or contains a script tag
+                    is_script = await page.evaluate("""(element) => {
+                        return element.tagName === 'SCRIPT' || element.querySelector('script') !== null;
+                    }""", element)
+
+                    if is_script:
+                        console.print(f"[yellow]⚠️  Element {i} is or contains a script tag, skipping...[/yellow]")
+                        skipped_scripts += 1
+                        progress.advance(task)
+                        continue
+
                     # Take a screenshot of the specific element
                     await element.screenshot(path=f"{output_dir}/element_{i}.png")
                     successful_screenshots += 1
@@ -203,7 +215,7 @@ async def take_screenshots(url: str, output_dir: str):
         await browser.close()
 
         console.print("[bold green]✅ Screenshot capture complete![/bold green]")
-        console.print(f"[green]📊 Successful: {successful_screenshots}, Failed: {failed_screenshots}[/green]")
+        console.print(f"[green]📊 Successful: {successful_screenshots}, Failed: {failed_screenshots}, Skipped scripts: {skipped_scripts}[/green]")
 
 def cleanup_similar_images(directory: str, similarity_threshold: float = 0.5):
     """
