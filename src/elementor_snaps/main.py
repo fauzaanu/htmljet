@@ -79,7 +79,7 @@ def cleanup_similar_images(directory: str, similarity_threshold: float = 0.5):
     clean_dir = os.path.join(directory, "clean")
     os.makedirs(clean_dir, exist_ok=True)
 
-    image_files = [f for f in os.listdir(directory) if f.endswith('.png')]
+    image_files = [f for f in os.listdir(directory) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))]
     image_hashes = {}
 
     if progress is None:
@@ -96,17 +96,20 @@ def cleanup_similar_images(directory: str, similarity_threshold: float = 0.5):
 
         for filename in image_files:
             file_path = os.path.join(directory, filename)
-            with Image.open(file_path) as img:
-                hash = imagehash.average_hash(img)
-                img_size = os.path.getsize(file_path)
+            try:
+                with Image.open(file_path) as img:
+                    hash = imagehash.average_hash(img)
+                    img_size = os.path.getsize(file_path)
 
-                for existing_hash, (existing_file, existing_size) in image_hashes.items():
-                    if (hash - existing_hash) / len(hash.hash) ** 2 <= 1 - similarity_threshold:
-                        if img_size > existing_size:
-                            image_hashes[hash] = (file_path, img_size)
-                        break
-                else:
-                    image_hashes[hash] = (file_path, img_size)
+                    for existing_hash, (existing_file, existing_size) in image_hashes.items():
+                        if (hash - existing_hash) / len(hash.hash) ** 2 <= 1 - similarity_threshold:
+                            if img_size > existing_size:
+                                image_hashes[hash] = (file_path, img_size)
+                            break
+                    else:
+                        image_hashes[hash] = (file_path, img_size)
+            except Exception as e:
+                console.print(f"[yellow]Warning: Could not process '{filename}': {str(e)}[/yellow]")
 
             progress.advance(task)
 
@@ -142,18 +145,25 @@ def snap(
 
 @app.command()
 def cleanup(
-    directory: str = typer.Argument(..., help="The directory containing images to clean up"),
+    directory: str = typer.Argument(".", help="The directory containing images to clean up (default: current directory)"),
     similarity_threshold: float = typer.Option(0.9, help="Threshold for considering images as similar (0.0 to 1.0)", min=0.0, max=1.0)
 ):
     """
     🧹 Clean up similar images in a directory, keeping the larger ones.
     """
     console.print("[bold magenta]🎭 Welcome to Elementor Snaps Cleanup![/bold magenta]")
-    console.print(f"[italic]Preparing to clean up similar images in {directory}[/italic]")
+    
+    # Convert to absolute path
+    abs_directory = os.path.abspath(directory)
+    console.print(f"[italic]Preparing to clean up similar images in {abs_directory}[/italic]")
 
-    cleanup_similar_images(directory, similarity_threshold)
+    if not os.path.exists(abs_directory):
+        console.print(f"[bold red]Error: The directory '{abs_directory}' does not exist.[/bold red]")
+        return
 
-    console.print(f"[bold green]🎉 All done! Your cleaned-up images are in the '{directory}' directory.[/bold green]")
+    cleanup_similar_images(abs_directory, similarity_threshold)
+
+    console.print(f"[bold green]🎉 All done! Your cleaned-up images are in the '{abs_directory}' directory.[/bold green]")
     console.print("[bold]Happy coding! 🗂️✨[/bold]")
 
 if __name__ == "__main__":
