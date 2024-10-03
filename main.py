@@ -1,8 +1,7 @@
 """
 elementor_snaps is a python script designed to take screenshots of Elementor pages.
 
-The default class we will be taking screenshots from is the elementor-element class as that is usually the class that
-contains one singular component.
+By default we are targeing the html attribute of [data-element_type="container"]
 
 Why?
 ---
