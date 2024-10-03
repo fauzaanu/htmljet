@@ -16,6 +16,8 @@ import typer
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
 from playwright.async_api import async_playwright, TimeoutError
+from PIL import Image
+import imagehash
 
 app = typer.Typer(help="🚀 Elementor Snaps: Capture Elementor magic with ease!")
 console = Console()
@@ -73,6 +75,47 @@ async def take_screenshots(url: str, output_dir: str):
         console.print(f"[bold green]✅ Screenshot capture complete![/bold green]")
         console.print(f"[green]📊 Successful: {successful_screenshots}, Failed: {failed_screenshots}[/green]")
 
+def cleanup_similar_images(directory: str, similarity_threshold: float = 0.9):
+    """
+    Remove similar images from the given directory, keeping the larger ones.
+    
+    :param directory: Directory containing the images
+    :param similarity_threshold: Threshold for considering images as similar (0.0 to 1.0)
+    """
+    image_files = [f for f in os.listdir(directory) if f.endswith('.png')]
+    image_hashes = {}
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        console=console
+    ) as progress:
+        task = progress.add_task("[cyan]Cleaning up similar images...", total=len(image_files))
+
+        for filename in image_files:
+            file_path = os.path.join(directory, filename)
+            with Image.open(file_path) as img:
+                hash = imagehash.average_hash(img)
+                img_size = os.path.getsize(file_path)
+                
+                for existing_hash, (existing_file, existing_size) in image_hashes.items():
+                    if (hash - existing_hash) / len(hash.hash) ** 2 <= 1 - similarity_threshold:
+                        if img_size > existing_size:
+                            os.remove(existing_file)
+                            image_hashes[hash] = (file_path, img_size)
+                        else:
+                            os.remove(file_path)
+                        break
+                else:
+                    image_hashes[hash] = (file_path, img_size)
+            
+            progress.advance(task)
+
+    removed_count = len(image_files) - len(image_hashes)
+    console.print(f"[bold green]🧹 Cleanup complete! Removed {removed_count} similar images.[/bold green]")
+
 @app.command()
 def snap(
     url: str = typer.Argument(..., help="The URL of the Elementor page to screenshot"),
@@ -86,7 +129,10 @@ def snap(
     
     asyncio.run(take_screenshots(url, output_dir))
     
-    console.print(f"[bold green]🎉 All done! Your screenshots are saved in the '{output_dir}' directory.[/bold green]")
+    console.print(f"[bold green]🎉 Screenshots captured! Now cleaning up similar images...[/bold green]")
+    cleanup_similar_images(output_dir)
+    
+    console.print(f"[bold green]🎉 All done! Your cleaned-up screenshots are saved in the '{output_dir}' directory.[/bold green]")
     console.print("[bold]Happy designing! 🎨✨[/bold]")
 
 if __name__ == "__main__":
