@@ -3,8 +3,21 @@ import asyncio
 import typer
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
-from playwright.async_api import async_playwright, TimeoutError
-from bs4 import BeautifulSoup
+from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
+from html.parser import HTMLParser
+
+class ElementCounter(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.level_counts = {}
+        self.current_level = 0
+
+    def handle_starttag(self, tag, attrs):
+        self.current_level += 1
+        self.level_counts[self.current_level] = self.level_counts.get(self.current_level, 0) + 1
+
+    def handle_endtag(self, tag):
+        self.current_level -= 1
 
 app = typer.Typer(help="🚀 HTMLJET: Capture HTML elements as screenshots")
 console = Console()
@@ -25,20 +38,9 @@ async def take_screenshots_all_levels(url: str, output_dir: str):
             await page.wait_for_load_state("networkidle")
 
         html_content = await page.content()
-        soup = BeautifulSoup(html_content, 'html.parser')
-        body = soup.body
-
-        def count_elements_by_level(element, current_level=1):
-            level_counts = {current_level: 0}
-            for child in element.children:
-                if child.name:
-                    level_counts[current_level] += 1
-                    child_counts = count_elements_by_level(child, current_level + 1)
-                    for level, count in child_counts.items():
-                        level_counts[level] = level_counts.get(level, 0) + count
-            return level_counts
-
-        element_counts = count_elements_by_level(body)
+        parser = ElementCounter()
+        parser.feed(html_content)
+        element_counts = parser.level_counts
 
         for level in sorted(element_counts.keys()):
             level_dir = os.path.join(output_dir, f"level_{level}")
@@ -66,7 +68,7 @@ async def take_screenshots_all_levels(url: str, output_dir: str):
                             continue
 
                         await element.screenshot(path=f"{level_dir}/element_{i}.png")
-                    except TimeoutError:
+                    except PlaywrightTimeoutError:
                         console.print(f"[red]⏱️  Timeout error occurred for element {i} at level {level}[/red]")
                     except Exception as e:
                         console.print(f"[red]❌ Error capturing screenshot for element {i} at level {level}: {str(e)}[/red]")
@@ -79,20 +81,9 @@ async def take_screenshots_all_levels(url: str, output_dir: str):
 
 async def analyze_html_structure(page):
     html_content = await page.content()
-    soup = BeautifulSoup(html_content, 'html.parser')
-    body = soup.body
-
-    def count_elements_by_level(element, current_level=1):
-        level_counts = {current_level: 0}
-        for child in element.children:
-            if child.name:
-                level_counts[current_level] += 1
-                child_counts = count_elements_by_level(child, current_level + 1)
-                for level, count in child_counts.items():
-                    level_counts[level] = level_counts.get(level, 0) + count
-        return level_counts
-
-    element_counts = count_elements_by_level(body)
+    parser = ElementCounter()
+    parser.feed(html_content)
+    element_counts = parser.level_counts
 
     def analyze_likely_component_level(counts):
         levels = sorted(counts.keys())
@@ -200,7 +191,7 @@ async def take_screenshots(url: str, output_dir: str):
                     # Take a screenshot of the specific element
                     await element.screenshot(path=f"{output_dir}/element_{i}.png")
                     successful_screenshots += 1
-                except TimeoutError:
+                except PlaywrightTimeoutError:
                     console.print(f"[red]⏱️  Timeout error occurred for element {i}[/red]")
                     failed_screenshots += 1
                 except Exception as e:
