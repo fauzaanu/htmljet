@@ -1,6 +1,6 @@
 # HTMLJet
 
-HTMLJet is a command-line tool for capturing screenshots of any website. 
+HTMLJet is a command-line tool for capturing screenshots of UI components from any website. 
 
 You would simply run the command 
 `htmljet snap https://example.com`
