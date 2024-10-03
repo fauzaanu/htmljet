@@ -23,26 +23,49 @@ async def analyze_html_structure(page):
     def count_children(element):
         return len([child for child in element.children if child.name is not None])
 
-    def find_significant_element(element, threshold=5):
-        if count_children(element) >= threshold:
-            return element
+    def print_element_hierarchy(element, level=0):
+        if element.name is None:
+            return
+
+        child_count = count_children(element)
+        indent = "  " * level
+        console.print(f"{indent}{element.name}: {child_count} child elements")
+
         for child in element.children:
             if child.name is not None:
-                result = find_significant_element(child, threshold)
-                if result:
-                    return result
-        return None
+                print_element_hierarchy(child, level + 1)
 
-    significant_element = find_significant_element(body)
+    print_element_hierarchy(body)
 
-    if significant_element:
-        selector = significant_element.name
-        classes = significant_element.get('class', [])
-        if classes:
-            selector += '.' + '.'.join(classes)
-        return selector
-    else:
+    while True:
+        try:
+            level = int(console.input("[bold cyan]Enter the level number to capture (0 for body, 1 for its children, etc.): [/bold cyan]"))
+            if level < 0:
+                console.print("[bold red]Invalid level. Please enter a non-negative integer.[/bold red]")
+                continue
+            break
+        except ValueError:
+            console.print("[bold red]Invalid input. Please enter a valid integer.[/bold red]")
+
+    def get_elements_at_level(element, target_level, current_level=0):
+        if current_level == target_level:
+            return [element]
+        
+        elements = []
+        for child in element.children:
+            if child.name is not None:
+                elements.extend(get_elements_at_level(child, target_level, current_level + 1))
+        return elements
+
+    elements_at_level = get_elements_at_level(body, level)
+    
+    if not elements_at_level:
+        console.print(f"[bold yellow]No elements found at level {level}. Using 'body > *' as fallback.[/bold yellow]")
         return 'body > *'
+
+    selector = ', '.join([element.name for element in elements_at_level])
+    console.print(f"[bold green]Using selector: {selector}[/bold green]")
+    return selector
 
 async def take_screenshots(url: str, output_dir: str):
     async with async_playwright() as p:
@@ -57,10 +80,9 @@ async def take_screenshots(url: str, output_dir: str):
             await page.wait_for_load_state("networkidle")
 
         selector = await analyze_html_structure(page)
-        console.print(f"[bold cyan]🔍 Using selector: {selector}[/bold cyan]")
 
         elements = await page.query_selector_all(selector)
-        console.print(f"[bold cyan]🔍 Found {len(elements)} elements[/bold cyan]")
+        console.print(f"[bold cyan]🔍 Found {len(elements)} elements at the selected level[/bold cyan]")
 
         os.makedirs(output_dir, exist_ok=True)
 
