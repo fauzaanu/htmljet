@@ -10,7 +10,7 @@ Once the page is loaded, HTMLJet will analyze the HTML structure and display the
 You can also run 
 `htmljet snap https://example.com --all-levels` or `htmljet snap https://example.com -a` to capture screenshots of all levels.
 
-When all levels are captured, the folder will contain a folder for each level, with the screenshots of the elements at that level.
+When all levels are captured, the folder will contain a subfolder per level
 
 ## Installation
 
@@ -19,6 +19,8 @@ To install HTMLJet, you need Python 3.12 or higher. You can install it using pip
 ```bash
 pip install htmljet
 ```
+
+You might also need to run `playwright install` and `playwright install-deps` as we use `playwright` to take the screenshots.
 
 ## Usage
 
@@ -36,4 +38,4 @@ Make sure you have uv installed.
 
 1. Clone the repo
 2. run uv sync
-
+3. We have playwright as a dependency so make sure to run `playwright install-deps` and `playwright install` if you dont often use it.
