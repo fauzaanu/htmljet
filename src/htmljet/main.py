@@ -9,7 +9,7 @@ from PIL import Image
 import imagehash
 from bs4 import BeautifulSoup
 
-app = typer.Typer(help="🚀 HTMLJET: Capture UI elements as screenshots")
+app = typer.Typer(help="🚀 HTMLJET: Capture HTML elements as screenshots")
 console = Console()
 
 # Global variable to store the Progress object
@@ -163,10 +163,10 @@ def snap(
     output_dir: str = typer.Option("elementor_screenshots", help="Directory to save screenshots", show_default=True)
 ):
     """
-    📸 Capture screenshots of Elementor containers on a webpage.
+    📸 Capture screenshots of HTML elements on a webpage.
     """
-    console.print("[bold magenta]🎭 Welcome to Elementor Snaps![/bold magenta]")
-    console.print(f"[italic]Preparing to capture the essence of {url}[/italic]")
+    console.print("[bold magenta]🎭 Welcome to HTMLJET![/bold magenta]")
+    console.print(f"[italic]Preparing to capture elements from {url}[/italic]")
 
     asyncio.run(take_screenshots(url, output_dir))
 
@@ -174,7 +174,7 @@ def snap(
     clean_dir = cleanup_similar_images(output_dir)
 
     console.print(f"[bold green]🎉 All done! Your cleaned-up screenshots are saved in the '{clean_dir}' directory.[/bold green]")
-    console.print("[bold]Happy designing! 🎨✨[/bold]")
+    console.print("[bold]Happy analyzing! 🔍✨[/bold]")
 
 @app.command()
 def cleanup(
@@ -184,7 +184,7 @@ def cleanup(
     """
     🧹 Clean up similar images in a directory, keeping the larger ones.
     """
-    console.print("[bold magenta]🎭 Welcome to Elementor Snaps Cleanup![/bold magenta]")
+    console.print("[bold magenta]🎭 Welcome to HTMLJET Cleanup![/bold magenta]")
 
     # Convert to absolute path
     abs_directory = os.path.abspath(directory)
