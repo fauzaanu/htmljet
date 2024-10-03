@@ -33,6 +33,8 @@ async def take_screenshots(url):
         # Find all elements with attribute data-element_type="container"
         elements = await page.query_selector_all('[data-element_type="container"]')
 
+        print(f"Found {len(elements)} elements")
+
         # Create a directory for screenshots if it doesn't exist
         os.makedirs("elementor_screenshots", exist_ok=True)
 
