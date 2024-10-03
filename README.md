@@ -3,12 +3,26 @@
 HTMLJet is a command-line tool for capturing screenshots of UI components from any website. 
 
 You would simply run the command 
-`htmljet snap https://example.com`
+
+```bash
+htmljet snap https://example.com
+```
 
 Once the page is loaded, HTMLJet will analyze the HTML structure and display the levels and the amount of child elements within each level. You can then choose the level you want to capture screenshots of.
 
 You can also run 
-`htmljet snap https://example.com --all-levels` or `htmljet snap https://example.com -a` to capture screenshots of all levels.
+
+```bash
+htmljet snap https://example.com --all-levels
+```
+
+or 
+
+```bash
+htmljet snap https://example.com -a
+``` 
+
+to capture screenshots of all levels.
 
 When all levels are captured, the folder will contain a subfolder per level
 
