@@ -34,7 +34,7 @@ async def analyze_html_structure(page):
         return None
 
     significant_element = find_significant_element(body)
-    
+
     if significant_element:
         selector = significant_element.name
         classes = significant_element.get('class', [])
@@ -159,8 +159,8 @@ def cleanup_similar_images(directory: str, similarity_threshold: float = 0.5):
 
 @app.command()
 def snap(
-    url: str = typer.Argument(..., help="The URL of the Elementor page to screenshot"),
-    output_dir: str = typer.Option("elementor_screenshots", help="Directory to save screenshots", show_default=True)
+    url: str = typer.Argument(..., help="The URL of the web page to screenshot"),
+    output_dir: str = typer.Option("htmljet", help="Directory to save screenshots", show_default=True)
 ):
     """
     📸 Capture screenshots of HTML elements on a webpage.
@@ -174,7 +174,6 @@ def snap(
     clean_dir = cleanup_similar_images(output_dir)
 
     console.print(f"[bold green]🎉 All done! Your cleaned-up screenshots are saved in the '{clean_dir}' directory.[/bold green]")
-    console.print("[bold]Happy analyzing! 🔍✨[/bold]")
 
 @app.command()
 def cleanup(
